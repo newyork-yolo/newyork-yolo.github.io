@@ -3,10 +3,11 @@ import react from "@vitejs/plugin-react-swc";
 import { resolve } from "node:path";
 import AutoImport from "unplugin-auto-import/vite";
 
-const base = process.env.BASE_PATH || "/";
+const base = "/newyorkyolo/"; // ← GitHub Pages用に固定
 const isPreview = process.env.IS_PREVIEW ? true : false;
-// https://vite.dev/config/
+
 export default defineConfig({
+  base, // ← ここが超重要
   define: {
     __BASE_PATH__: JSON.stringify(base),
     __IS_PREVIEW__: JSON.stringify(isPreview),
@@ -58,7 +59,6 @@ export default defineConfig({
             "Outlet",
           ],
         },
-        // React i18n
         {
           "react-i18next": ["useTranslation", "Trans"],
         },
@@ -66,10 +66,9 @@ export default defineConfig({
       dts: true,
     }),
   ],
-  base,
   build: {
     sourcemap: true,
-    outDir: "out",
+    outDir: "out", // ← ここも重要（deployと合わせる）
   },
   resolve: {
     alias: {
