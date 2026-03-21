@@ -70,7 +70,7 @@ export default function Members() {
   const members: Member[] = [
     {
       name: "國嶋賢志朗",
-      image: "/images/Photo_KenshiroKunishima.jpg",
+      image: "images/Photo_KenshiroKunishima.jpg",
       objectPosition: "center 60%",
       role: "Player",
       bio: "夢を追いかけ、人生の可能性を広げるためにニューヨークへ。現在はNYの不動産企業で働いています。「死ぬこと以外はかすり傷」。挑戦することを前提に、人生を設計しています。",
@@ -84,7 +84,7 @@ export default function Members() {
     },
     {
       name: "山本竜也",
-      image: "/images/Photo_TatsuyaYamamoto.jpg",
+      image: "images/Photo_TatsuyaYamamoto.jpg",
       objectPosition: "center 15%",
       role: "Architect",
       bio: "東京を拠点として思想設計、戦略の検討、仕組化、インフラの整備等裏方業務を担当しています。人生はどのタイミングからでも「再構築」できるという自分自身の体験から、皆様の人生に少しでも刺激を与えることができる体験を設計しています。",
