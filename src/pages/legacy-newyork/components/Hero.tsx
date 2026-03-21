@@ -12,30 +12,44 @@ export default function Hero() {
 
       <div className="relative z-10 text-center text-white px-6">
         <div className="mb-6">
-          <h1 className="text-6xl md:text-7xl font-light tracking-wider mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1
+            className="text-6xl md:text-7xl font-light tracking-wider mb-4"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
             LEGACY NEW YORK
           </h1>
           <div className="w-24 h-px bg-[#B11226] mx-auto mb-6"></div>
-          <p className="text-xl md:text-2xl font-light tracking-wide text-white/90" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <p
+            className="text-xl md:text-2xl font-light tracking-wide text-white/90"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
             ニューヨークで繋がる、新たな出会いと体験
           </p>
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-center gap-4 mt-12">
-          <a
-            href="#next-event"
+          <button
+            onClick={() =>
+              document
+                .getElementById("next-event")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
             className="bg-[#B11226] text-white px-8 py-4 text-sm font-medium hover:bg-[#8b0e1e] transition-colors cursor-pointer whitespace-nowrap rounded-lg"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             次回イベント情報
-          </a>
-          <a
-            href="#line-group"
+          </button>
+          <button
+            onClick={() =>
+              document
+                .getElementById("line-group")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
             className="bg-white/10 backdrop-blur-sm text-white px-8 py-4 text-sm font-medium hover:bg-white/20 transition-colors cursor-pointer whitespace-nowrap border border-white/30 rounded-lg"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             LINEグループに参加
-          </a>
+          </button>
         </div>
       </div>
 
