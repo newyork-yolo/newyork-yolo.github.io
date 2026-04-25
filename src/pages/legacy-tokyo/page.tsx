@@ -195,6 +195,14 @@ function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
       </section>
     );
   }
+  // TokyoNextEvent の return の直前（if (!event) の下あたり）に追加
+
+  const isValidUrl = (url: string) => {
+    return url && url.trim() !== "" && url.trim() !== "-";
+  };
+
+  const isWomenPaymentActive = isValidUrl(event.paymentWomensUrl);
+  const isMenPaymentActive = isValidUrl(event.paymentMensUrl);
 
   if (!event) {
     return (
@@ -285,26 +293,35 @@ function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                 </p>
               </div>
               <div className="flex flex-col gap-3">
-                {event.paymentWomensUrl && (
-                  <a
-                    href={event.paymentWomensUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full text-center bg-[#B11226] text-white px-8 py-4 text-sm rounded-lg hover:bg-[#8b0e1e] transition-colors"
-                  >
-                    {event.paymentWomensComment || "チケット購入（女性）"}
-                  </a>
-                )}
-                {event.paymentMensUrl && (
-                  <a
-                    href={event.paymentMensUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full text-center bg-[#111111] text-white px-8 py-4 text-sm rounded-lg hover:bg-[#2a2a2a] transition-colors"
-                  >
-                    {event.paymentMensComment || "チケット購入（男性）"}
-                  </a>
-                )}
+                {/* 女性用 */}
+                <a
+                  href={
+                    isWomenPaymentActive ? event.paymentWomensUrl : undefined
+                  }
+                  target={isWomenPaymentActive ? "_blank" : undefined}
+                  rel={isWomenPaymentActive ? "noopener noreferrer" : undefined}
+                  className={`w-full text-center px-8 py-4 text-sm rounded-lg transition-colors ${
+                    isWomenPaymentActive
+                      ? "bg-[#B11226] text-white hover:bg-[#8b0e1e] cursor-pointer"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none"
+                  }`}
+                >
+                  {event.paymentWomensComment || "チケット購入（女性）"}
+                </a>
+
+                {/* 男性用 */}
+                <a
+                  href={isMenPaymentActive ? event.paymentMensUrl : undefined}
+                  target={isMenPaymentActive ? "_blank" : undefined}
+                  rel={isMenPaymentActive ? "noopener noreferrer" : undefined}
+                  className={`w-full text-center px-8 py-4 text-sm rounded-lg transition-colors ${
+                    isMenPaymentActive
+                      ? "bg-[#111111] text-white hover:bg-[#2a2a2a] cursor-pointer"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none"
+                  }`}
+                >
+                  {event.paymentMensComment || "チケット購入（男性）"}
+                </a>
               </div>
             </div>
           </ScrollReveal>

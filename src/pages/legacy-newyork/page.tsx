@@ -9,6 +9,7 @@ import LineGroup from "../home/components/LineGroup";
 import Footer from "../home/components/Footer";
 import SectionDivider from "../../components/feature/SectionDivider";
 import ScrollReveal from "../../components/base/ScrollReveal";
+import Sponsor from "../home/components/Sponsor";
 
 // ─────────────────────────────────────────
 // スプレッドシート設定（実績）
@@ -137,8 +138,10 @@ type NextEvent = {
   venue: string;
   ticket: string;
   ticketComment: string;
-  paymentWomens: string;
-  paymentMens: string;
+  paymentWomensUrl: string;
+  paymentWomensComment: string;
+  paymentMensUrl: string;
+  paymentMensComment: string;
   image: string;
 };
 
@@ -163,8 +166,10 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
           venue: row["VANUE"] ?? "",
           ticket: row["TICKET"] ?? "",
           ticketComment: row["TICKET COMMENT"] ?? "",
-          paymentWomens: row["payment_womens"] ?? "",
-          paymentMens: row["payment_mens"] ?? "",
+          paymentWomensUrl: row["payment_womens_url"] ?? "",
+          paymentWomensComment: row["payment_womens_comment"] ?? "",
+          paymentMensUrl: row["payment_mens_url"] ?? "",
+          paymentMensComment: row["payment_mens_comment"] ?? "",
           image: toDriveImageUrl(row["image"] ?? ""),
         });
       })
@@ -185,6 +190,15 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
       </section>
     );
   }
+
+  // NYNextEvent の return の直前（if (!event) の下あたり）に追加
+
+  const isValidUrl = (url: string) => {
+    return url && url.trim() !== "" && url.trim() !== "-";
+  };
+
+  const isWomenPaymentActive = isValidUrl(event.paymentWomensUrl);
+  const isMenPaymentActive = isValidUrl(event.paymentMensUrl);
 
   if (!event) {
     return (
@@ -270,78 +284,40 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                 <p className="text-lg text-[#111111]">{event.ticket}</p>
                 <p className="text-sm text-gray-500">{event.ticketComment}</p>
               </div>
-              <button
-                disabled
-                className="w-full text-center bg-gray-300 text-gray-500 px-8 py-4 text-sm whitespace-nowrap rounded-lg cursor-not-allowed opacity-60"
-              >
-                {event.paymentWomens}
-              </button>
+              <div className="flex flex-col gap-3">
+                {/* 女性用 */}
+                <a
+                  href={
+                    isWomenPaymentActive ? event.paymentWomensUrl : undefined
+                  }
+                  target={isWomenPaymentActive ? "_blank" : undefined}
+                  rel={isWomenPaymentActive ? "noopener noreferrer" : undefined}
+                  className={`w-full text-center px-8 py-4 text-sm rounded-lg transition-colors ${
+                    isWomenPaymentActive
+                      ? "bg-[#B11226] text-white hover:bg-[#8b0e1e] cursor-pointer"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none"
+                  }`}
+                >
+                  {event.paymentWomensComment || "チケット購入（女性）"}
+                </a>
+
+                {/* 男性用 */}
+                <a
+                  href={isMenPaymentActive ? event.paymentMensUrl : undefined}
+                  target={isMenPaymentActive ? "_blank" : undefined}
+                  rel={isMenPaymentActive ? "noopener noreferrer" : undefined}
+                  className={`w-full text-center px-8 py-4 text-sm rounded-lg transition-colors ${
+                    isMenPaymentActive
+                      ? "bg-[#111111] text-white hover:bg-[#2a2a2a] cursor-pointer"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none"
+                  }`}
+                >
+                  {event.paymentMensComment || "チケット購入（男性）"}
+                </a>
+              </div>
             </div>
           </ScrollReveal>
         </div>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────
-// NYSponsor（既存のまま）
-// ─────────────────────────────────────────
-function NYSponsor() {
-  const sponsors = [
-    { name: "株式会社BentOn" },
-    { name: "株式会社HIS USA" },
-    { name: "株式会社LINC ORIGINAL MAKERS" },
-    { name: "株式会社Sapporo Beer USA" },
-    { name: "株式会社SOWAKA" },
-    { name: "株式会社Yogibo" },
-    { name: "株式会社Iichiko" },
-    { name: "株式会社Naxly" },
-    { name: "株式会社Sato Shiki Whisky" },
-  ];
-
-  return (
-    <section id="sponsor" className="py-24 bg-[#111111]">
-      <div className="max-w-7xl mx-auto px-6">
-        <ScrollReveal>
-          <div className="text-center mb-16">
-            <p className="text-xs tracking-widest text-white/40 mb-3">
-              SUPPORTED BY
-            </p>
-            <h2
-              className="text-3xl font-light text-white"
-              style={{ fontFamily: "'Playfair Display', serif" }}
-            >
-              交流会スポンサー様
-            </h2>
-            <div className="w-16 h-px bg-[#B11226] mx-auto mt-4"></div>
-          </div>
-        </ScrollReveal>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
-          {sponsors.map((sponsor, index) => (
-            <ScrollReveal key={index} delay={index * 60} direction="up">
-              <div className="bg-white/5 border border-white/10 hover:border-[#B11226]/40 rounded-xl px-6 py-5 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center">
-                <p className="text-sm font-medium text-white/80 tracking-wide text-center">
-                  {sponsor.name}様
-                </p>
-              </div>
-            </ScrollReveal>
-          ))}
-        </div>
-        <ScrollReveal delay={200}>
-          <div className="text-center">
-            <p className="text-sm text-white/50 mb-4">
-              スポンサーシップに関するお問い合わせ
-            </p>
-            <a
-              href="mailto:mail2tatsu@gmail.com"
-              className="inline-flex items-center gap-2 text-white/70 hover:text-[#B11226] transition-colors cursor-pointer"
-            >
-              <i className="ri-mail-line"></i>
-              <span>mail2tatsu@gmail.com</span>
-            </a>
-          </div>
-        </ScrollReveal>
       </div>
     </section>
   );
@@ -415,7 +391,7 @@ export default function LegacyNewYork() {
       <SectionDivider fromColor="#ffffff" toColor="#06C755" />
       <LineGroup lineUrl="https://line.me/ti/g/VrhAFUvADx" />
       <SectionDivider fromColor="#06C755" toColor="#111111" flip />
-      <NYSponsor />
+      <Sponsor />
       <SectionDivider fromColor="#111111" toColor="#0a0a0a" />
       <Footer />
     </div>
