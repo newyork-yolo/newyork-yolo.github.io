@@ -1,84 +1,161 @@
-import { useEffect } from 'react';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Attractive from '../home/components/Attractive';
-import Overview from '../home/components/Overview';
-import Achievements from '../home/components/Achievements';
-import OrganizerMessage from './components/OrganizerMessage';
-import LineGroup from '../home/components/LineGroup';
-import Footer from '../home/components/Footer';
-import SectionDivider from '../../components/feature/SectionDivider';
-import ScrollReveal from '../../components/base/ScrollReveal';
+import { useEffect, useState } from "react";
+import Navbar from "./components/Navbar";
+import Hero from "./components/Hero";
+import Attractive from "../home/components/Attractive";
+import Overview from "../home/components/Overview";
+import Achievements from "../home/components/Achievements";
+import OrganizerMessage from "./components/OrganizerMessage";
+import LineGroup from "../home/components/LineGroup";
+import Footer from "../home/components/Footer";
+import SectionDivider from "../../components/feature/SectionDivider";
+import ScrollReveal from "../../components/base/ScrollReveal";
 
+// ─────────────────────────────────────────
+// スプレッドシート設定
+// ─────────────────────────────────────────
+const SHEET_ID = "1oJPixIQRn56692zyPXhmEBOPmITLqJ99C-EM15dRtC8";
+const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+
+// GoogleドライブのURLを画像直接表示用URLに変換
+function toDriveImageUrl(url: string): string {
+  const match = url.match(/\/file\/d\/([^/]+)\//);
+  if (match) {
+    return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`;
+  }
+  return url;
+}
+
+// CSVパーサー（カンマ・改行を含むセルのダブルクォート囲みに対応）
+function parseCSV(csv: string): Record<string, string>[] {
+  const lines: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < csv.length; i++) {
+    const char = csv[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "\n" && !inQuotes) {
+      lines.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  if (current) lines.push(current);
+
+  const parseRow = (line: string): string[] => {
+    const cells: string[] = [];
+    let cell = "";
+    let inQ = false;
+    for (const char of line) {
+      if (char === '"') {
+        inQ = !inQ;
+      } else if (char === "," && !inQ) {
+        cells.push(cell.trim());
+        cell = "";
+      } else {
+        cell += char;
+      }
+    }
+    cells.push(cell.trim());
+    return cells;
+  };
+
+  const headers = parseRow(lines[0]);
+  return lines
+    .slice(1)
+    .filter((line) => line.trim())
+    .map((line) => {
+      const values = parseRow(line);
+      return headers.reduce(
+        (obj, header, i) => {
+          obj[header] = values[i] ?? "";
+          return obj;
+        },
+        {} as Record<string, string>,
+      );
+    });
+}
+
+// ─────────────────────────────────────────
+// 固定データ
+// ─────────────────────────────────────────
 const nyAttractivePoints = [
   {
-    title: 'Premium Venue',
-    description: 'ニューヨークの一等地にある厳選された会場で、特別な空間体験を提供します。',
-    image: 'https://readdy.ai/api/search-image?query=Luxurious%20rooftop%20venue%20in%20Manhattan%20with%20stunning%20city%20skyline%20view%20elegant%20outdoor%20seating%20warm%20string%20lights%20sophisticated%20atmosphere%20premium%20event%20space%20sunset%20golden%20hour&width=400&height=300&seq=5&orientation=landscape'
+    title: "Premium Venue",
+    description:
+      "ニューヨークの一等地にある厳選された会場で、特別な空間体験を提供します。",
+    image:
+      "https://readdy.ai/api/search-image?query=Luxurious%20rooftop%20venue%20in%20Manhattan%20with%20stunning%20city%20skyline%20view%20elegant%20outdoor%20seating%20warm%20string%20lights%20sophisticated%20atmosphere%20premium%20event%20space%20sunset%20golden%20hour&width=400&height=300&seq=5&orientation=landscape",
   },
   {
-    title: 'Global Network',
-    description: 'NY駐在員や起業家、インフルエンサー等NYで挑戦されている方々と出会い人生の刺激となる空間をご提供します。',
-    image: 'https://static.readdy.ai/image/0c61843cac5595a4ea86012b4ca98e8d/1bd25d14384aa85850802e0ebdd64662.jpeg'
+    title: "Global Network",
+    description:
+      "NY駐在員や起業家、インフルエンサー等NYで挑戦されている方々と出会い人生の刺激となる空間をご提供します。",
+    image:
+      "https://static.readdy.ai/image/0c61843cac5595a4ea86012b4ca98e8d/1bd25d14384aa85850802e0ebdd64662.jpeg",
   },
   {
-    title: 'Exclusive Experience',
-    description: '細部までこだわり抜いた演出で、忘れられない一夜を創り上げます。',
-    image: 'https://readdy.ai/api/search-image?query=Exclusive%20VIP%20lounge%20area%20with%20premium%20bottle%20service%20elegant%20decor%20soft%20ambient%20lighting%20velvet%20seating%20crystal%20glasses%20sophisticated%20nightlife%20experience&width=400&height=300&seq=7&orientation=landscape'
-  }
+    title: "Exclusive Experience",
+    description:
+      "細部までこだわり抜いた演出で、忘れられない一夜を創り上げます。",
+    image:
+      "https://readdy.ai/api/search-image?query=Exclusive%20VIP%20lounge%20area%20with%20premium%20bottle%20service%20elegant%20decor%20soft%20ambient%20lighting%20velvet%20seating%20crystal%20glasses%20sophisticated%20nightlife%20experience&width=400&height=300&seq=7&orientation=landscape",
+  },
 ];
 
 const nyOverviewItems = [
-  { label: '団体名', value: 'Legacy New York' },
-  { label: '設立', value: '2024年' },
-  { label: '拠点', value: 'New York, USA' },
-  { label: '活動内容', value: 'イベントプロデュース・空間デザイン' },
-  { label: '参加者', value: '150人〜300人' },
+  { label: "団体名", value: "Legacy New York" },
+  { label: "設立", value: "2024年" },
+  { label: "拠点", value: "New York, USA" },
+  { label: "活動内容", value: "イベントプロデュース・空間デザイン" },
+  { label: "参加者", value: "150人〜300人" },
 ];
 
-const nyAchievements = [
-  {
-    title: '#1',
-    date: '2025.08.23 (Sat.) @Manhattan',
-    visitors: '来場者数: 86人',
-    description: 'Legacy New York初のイベント。セントラルパーク近くのマンハッタンの高層ビル内で開催',
-    image: 'https://static.readdy.ai/image/0c61843cac5595a4ea86012b4ca98e8d/03b61461a2a2f157871c228f9351a576.jpeg'
-  },
-  {
-    title: '#2',
-    date: '2025.10.11 (Sat.) @Manhattan',
-    visitors: '来場者数: 91人',
-    description: 'Legacy New York2回目となるイベント。1回目と同じくセントラルパーク近くのマンハッタンの高層ビル内で開催',
-    image: 'https://static.readdy.ai/image/0c61843cac5595a4ea86012b4ca98e8d/eff95d896f55f2177f34d8a80ae0eba6.jpeg'
-  },
-  {
-    title: '#3',
-    date: '2026.1.17 (Sat.) @Manhattan',
-    visitors: '来場者数: 160人',
-    description: 'Legacy New York3回目となるイベント。マンハッタン中心部の高層ビル内で開催。160人規模と大盛況した会となった。',
-    image: 'https://static.readdy.ai/image/0c61843cac5595a4ea86012b4ca98e8d/02076cd05080e62bae849390fdb6b10e.jpeg'
-  },
-];
+// ─────────────────────────────────────────
+// 実績の型定義
+// ─────────────────────────────────────────
+type Achievement = {
+  title: string;
+  date: string;
+  visitors: string;
+  description: string;
+  image: string;
+};
 
-function NYNextEvent({ sectionNumber = '05' }: { sectionNumber?: string }) {
+// ─────────────────────────────────────────
+// NYNextEvent（既存のまま）
+// ─────────────────────────────────────────
+function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
   return (
     <section id="next-event" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">
         <ScrollReveal>
           <div className="mb-16">
             <div className="flex items-start gap-8 mb-8">
-              <p className="text-6xl font-light text-gray-100" style={{ fontFamily: "'Playfair Display', serif" }}>{sectionNumber}</p>
+              <p
+                className="text-6xl font-light text-gray-100"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                {sectionNumber}
+              </p>
               <div>
-                <h3 className="text-xs tracking-widest text-gray-400 mb-3">NEXT EVENT</h3>
+                <h3 className="text-xs tracking-widest text-gray-400 mb-3">
+                  NEXT EVENT
+                </h3>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-px bg-[#B11226]"></div>
-                  <h2 className="text-2xl font-light text-[#111111]" style={{ fontFamily: "'Playfair Display', serif" }}>NEXT開催</h2>
+                  <h2
+                    className="text-2xl font-light text-[#111111]"
+                    style={{ fontFamily: "'Playfair Display', serif" }}
+                  >
+                    NEXT開催
+                  </h2>
                 </div>
               </div>
             </div>
           </div>
         </ScrollReveal>
-
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <ScrollReveal direction="right" delay={100}>
             <div className="relative">
@@ -89,16 +166,25 @@ function NYNextEvent({ sectionNumber = '05' }: { sectionNumber?: string }) {
               />
             </div>
           </ScrollReveal>
-
           <ScrollReveal direction="left" delay={200}>
             <div className="space-y-8">
               <div>
                 <p className="text-xs text-gray-400 mb-2">EVENT NAME</p>
-                <h3 className="text-2xl font-light text-[#111111]" style={{ fontFamily: "'Playfair Display', serif" }}>第4回 Legacy New York</h3>
+                <h3
+                  className="text-2xl font-light text-[#111111]"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  第4回 Legacy New York
+                </h3>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-2">DATE</p>
-                <p className="text-4xl font-light text-[#111111]" style={{ fontFamily: "'Playfair Display', serif" }}>2026.04.18</p>
+                <p
+                  className="text-4xl font-light text-[#111111]"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  2026.04.18
+                </p>
                 <p className="text-lg text-gray-500">Saturday</p>
               </div>
               <div>
@@ -107,14 +193,17 @@ function NYNextEvent({ sectionNumber = '05' }: { sectionNumber?: string }) {
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-2">VENUE</p>
-                <p className="text-lg text-[#111111]">230 Fifth Rooftop Bar Penthouse (20th Floor)</p>
+                <p className="text-lg text-[#111111]">
+                  230 Fifth Rooftop Bar Penthouse (20th Floor)
+                </p>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-2">TICKET</p>
                 <p className="text-lg text-[#111111]">$40</p>
-                <p className="text-sm text-gray-500">※ドリンク費は別となります。</p>
+                <p className="text-sm text-gray-500">
+                  ※ドリンク費は別となります。
+                </p>
               </div>
-
               <button
                 disabled
                 className="w-full text-center bg-gray-300 text-gray-500 px-8 py-4 text-sm whitespace-nowrap rounded-lg cursor-not-allowed opacity-60"
@@ -129,17 +218,20 @@ function NYNextEvent({ sectionNumber = '05' }: { sectionNumber?: string }) {
   );
 }
 
+// ─────────────────────────────────────────
+// NYSponsor（既存のまま）
+// ─────────────────────────────────────────
 function NYSponsor() {
   const sponsors = [
-    { name: '株式会社BentOn' },
-    { name: '株式会社HIS USA' },
-    { name: '株式会社LINC ORIGINAL MAKERS' },
-    { name: '株式会社Sapporo Beer USA' },
-    { name: '株式会社SOWAKA' },
-    { name: '株式会社Yogibo' },
-    { name: '株式会社Iichiko' },
-    { name: '株式会社Naxly' },
-    { name: '株式会社Sato Shiki Whisky' },
+    { name: "株式会社BentOn" },
+    { name: "株式会社HIS USA" },
+    { name: "株式会社LINC ORIGINAL MAKERS" },
+    { name: "株式会社Sapporo Beer USA" },
+    { name: "株式会社SOWAKA" },
+    { name: "株式会社Yogibo" },
+    { name: "株式会社Iichiko" },
+    { name: "株式会社Naxly" },
+    { name: "株式会社Sato Shiki Whisky" },
   ];
 
   return (
@@ -147,12 +239,18 @@ function NYSponsor() {
       <div className="max-w-7xl mx-auto px-6">
         <ScrollReveal>
           <div className="text-center mb-16">
-            <p className="text-xs tracking-widest text-white/40 mb-3">SUPPORTED BY</p>
-            <h2 className="text-3xl font-light text-white" style={{ fontFamily: "'Playfair Display', serif" }}>交流会スポンサー様</h2>
+            <p className="text-xs tracking-widest text-white/40 mb-3">
+              SUPPORTED BY
+            </p>
+            <h2
+              className="text-3xl font-light text-white"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              交流会スポンサー様
+            </h2>
             <div className="w-16 h-px bg-[#B11226] mx-auto mt-4"></div>
           </div>
         </ScrollReveal>
-
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
           {sponsors.map((sponsor, index) => (
             <ScrollReveal key={index} delay={index * 60} direction="up">
@@ -164,16 +262,18 @@ function NYSponsor() {
             </ScrollReveal>
           ))}
         </div>
-
         <ScrollReveal delay={200}>
           <div className="text-center">
-            <p className="text-sm text-white/50 mb-4">スポンサーシップに関するお問い合わせ</p>
+            <p className="text-sm text-white/50 mb-4">
+              スポンサーシップに関するお問い合わせ
+            </p>
+
             <a
-              href="mailto:new-york-yolo@googlegroups.com"
+              href="mailto:mail2tatsu@gmail.com"
               className="inline-flex items-center gap-2 text-white/70 hover:text-[#B11226] transition-colors cursor-pointer"
             >
               <i className="ri-mail-line"></i>
-              <span>new-york-yolo@googlegroups.com</span>
+              <span>mail2tatsu@gmail.com</span>
             </a>
           </div>
         </ScrollReveal>
@@ -182,10 +282,49 @@ function NYSponsor() {
   );
 }
 
+// ─────────────────────────────────────────
+// メインページ
+// ─────────────────────────────────────────
 export default function LegacyNewYork() {
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    fetch(SHEET_CSV_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error("fetch failed");
+        return res.text();
+      })
+      .then((csv) => {
+        const rows = parseCSV(csv);
+        const data: Achievement[] = rows
+          .filter((row) => row["No"] && row["No"].trim() !== "")
+          .map((row) => ({
+            title: `#${row["No"]}`,
+            date: row["Date"] ?? "",
+            visitors: `来場者数: ${row["number of visitors"] ?? ""}人`,
+            description: row["comment"] ?? "",
+            image: toDriveImageUrl(row["image_url"] ?? ""),
+          }));
+        setAchievements(data);
+      })
+      .catch(() => {
+        setError("実績データの読み込みに失敗しました。");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
+
+  // ローディング・エラー時の代替表示用コンポーネント
+  const AchievementsPlaceholder = ({ message }: { message: string }) => (
+    <div className="bg-[#111111] py-24 text-center">
+      <p className="text-white/40 text-sm">{message}</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white">
@@ -196,7 +335,15 @@ export default function LegacyNewYork() {
       <SectionDivider fromColor="#ffffff" toColor="#f9fafb" flip />
       <Overview sectionNumber="02" items={nyOverviewItems} />
       <SectionDivider fromColor="#f9fafb" toColor="#111111" />
-      <Achievements sectionNumber="03" achievements={nyAchievements} />
+
+      {loading ? (
+        <AchievementsPlaceholder message="読み込み中..." />
+      ) : error ? (
+        <AchievementsPlaceholder message={error} />
+      ) : (
+        <Achievements sectionNumber="03" achievements={achievements} />
+      )}
+
       <SectionDivider fromColor="#111111" toColor="#ffffff" flip />
       <OrganizerMessage sectionNumber="04" />
       <SectionDivider fromColor="#ffffff" toColor="#ffffff" flip />

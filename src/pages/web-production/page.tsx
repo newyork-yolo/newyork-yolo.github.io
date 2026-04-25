@@ -463,10 +463,10 @@ function Contact() {
                 EMAIL
               </p>
               <a
-                href="mailto:new-york-yolo@googlegroups.com"
+                href="mailto:mail2tatsu@gmail.com"
                 className="text-xl text-white hover:text-[#B11226] transition-colors cursor-pointer"
               >
-                new-york-yolo@googlegroups.com
+                mail2tatsu@gmail.com
               </a>
             </div>
             <p className="text-sm text-white/40 leading-relaxed max-w-md">
@@ -477,7 +477,7 @@ function Contact() {
               通常2営業日以内にご返信いたします。
             </p>
             <a
-              href="mailto:new-york-yolo@googlegroups.com"
+              href="mailto:mail2tatsu@gmail.com"
               className="inline-block bg-[#B11226] hover:bg-[#8f0e1e] text-white px-10 py-4 rounded-lg text-sm font-medium whitespace-nowrap transition-colors cursor-pointer"
             >
               メールで相談する
