@@ -5,17 +5,20 @@ import Attractive from "../home/components/Attractive";
 import Overview from "../home/components/Overview";
 import Achievements from "../home/components/Achievements";
 import OrganizerMessage from "./components/OrganizerMessage";
-import NextEvent from "../home/components/NextEvent";
 import LineGroup from "../home/components/LineGroup";
 import Footer from "../home/components/Footer";
 import SectionDivider from "../../components/feature/SectionDivider";
 import ScrollReveal from "../../components/base/ScrollReveal";
 
 // ─────────────────────────────────────────
-// スプレッドシート設定
+// スプレッドシート設定（実績）
 // ─────────────────────────────────────────
 const SHEET_ID = "1WV6lhja1UdHAouGP9Z-QPeTJmaFJDHOudfp7yRamNFA";
 const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+
+// NEXT開催スプレッドシート
+const NEXT_EVENT_SHEET_ID = "1HpGF3dS7y6zosBtUFuKbeIzi_67M159om5DEtIefV3w";
+const NEXT_EVENT_CSV_URL = `https://docs.google.com/spreadsheets/d/${NEXT_EVENT_SHEET_ID}/export?format=csv`;
 
 function toDriveImageUrl(url: string): string {
   const match = url.match(/\/file\/d\/([^/]+)\//);
@@ -111,7 +114,6 @@ const tokyoOverviewItems = [
   { label: "参加者規模", value: "80名〜150名" },
 ];
 
-// データがない場合のフォールバック表示
 const tokyoAchievementsFallback = [
   {
     title: "Coming Soon",
@@ -124,7 +126,196 @@ const tokyoAchievementsFallback = [
 ];
 
 // ─────────────────────────────────────────
-// TokyoSponsor（既存のまま）
+// 型定義
+// ─────────────────────────────────────────
+type Achievement = {
+  title: string;
+  date: string;
+  visitors: string;
+  description: string;
+  image: string;
+};
+
+type NextEvent = {
+  eventName: string;
+  date: string;
+  time: string;
+  venue: string;
+  ticket: string;
+  ticketComment: string;
+  paymentWomensUrl: string;
+  paymentWomensComment: string;
+  paymentMensUrl: string;
+  paymentMensComment: string;
+  image: string;
+};
+
+// ─────────────────────────────────────────
+// TokyoNextEvent（スプレッドシートから動的取得）
+// ─────────────────────────────────────────
+function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
+  const [event, setEvent] = useState<NextEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(NEXT_EVENT_CSV_URL)
+      .then((res) => res.text())
+      .then((csv) => {
+        const rows = parseCSV(csv);
+        if (rows.length === 0) return;
+        const row = rows[0];
+        setEvent({
+          eventName: row["EVENT NAME"] ?? "",
+          date: row["DATE"] ?? "",
+          time: row["TIME"] ?? "",
+          venue: row["VANUE"] ?? "",
+          ticket: row["TICKET"] ?? "",
+          ticketComment: row["TICKET COMMENT"] ?? "",
+          paymentWomensUrl: row["payment_womens_url"] ?? "",
+          paymentWomensComment: row["payment_womens_comment"] ?? "",
+          paymentMensUrl: row["payment_mens_url"] ?? "",
+          paymentMensComment: row["payment_mens_comment"] ?? "",
+          image: toDriveImageUrl(row["image"] ?? ""),
+        });
+      })
+      .catch((e) => {
+        console.error("NEXT開催データの取得に失敗しました", e);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <section id="next-event" className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-gray-400 text-sm">読み込み中...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!event) {
+    return (
+      <section id="next-event" className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-gray-400 text-sm">
+            イベント情報を取得できませんでした。
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section id="next-event" className="py-24 bg-white">
+      <div className="max-w-7xl mx-auto px-6">
+        <ScrollReveal>
+          <div className="mb-16">
+            <div className="flex items-start gap-8 mb-8">
+              <p
+                className="text-6xl font-light text-gray-100"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                {sectionNumber}
+              </p>
+              <div>
+                <h3 className="text-xs tracking-widest text-gray-400 mb-3">
+                  NEXT EVENT
+                </h3>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-px bg-[#B11226]"></div>
+                  <h2
+                    className="text-2xl font-light text-[#111111]"
+                    style={{ fontFamily: "'Playfair Display', serif" }}
+                  >
+                    NEXT開催
+                  </h2>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        <div className="grid md:grid-cols-2 gap-12 items-center">
+          <ScrollReveal direction="right" delay={100}>
+            <div className="relative">
+              <img
+                src={event.image}
+                alt={event.eventName}
+                className="w-full h-[500px] object-contain rounded-lg"
+              />
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal direction="left" delay={200}>
+            <div className="space-y-8">
+              <div>
+                <p className="text-xs text-gray-400 mb-2">EVENT NAME</p>
+                <h3
+                  className="text-2xl font-light text-[#111111]"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  {event.eventName}
+                </h3>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-2">DATE</p>
+                <p
+                  className="text-4xl font-light text-[#111111]"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
+                  {event.date}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-2">TIME</p>
+                <p className="text-lg text-[#111111]">{event.time}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-2">VENUE</p>
+                <p className="text-lg text-[#111111]">{event.venue}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 mb-2">TICKET</p>
+                <p className="text-lg text-[#111111]">{event.ticket}</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {event.ticketComment}
+                </p>
+              </div>
+              <div className="flex flex-col gap-3">
+                {event.paymentWomensUrl && (
+                  <a
+                    href={event.paymentWomensUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full text-center bg-[#B11226] text-white px-8 py-4 text-sm rounded-lg hover:bg-[#8b0e1e] transition-colors"
+                  >
+                    {event.paymentWomensComment || "チケット購入（女性）"}
+                  </a>
+                )}
+                {event.paymentMensUrl && (
+                  <a
+                    href={event.paymentMensUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full text-center bg-[#111111] text-white px-8 py-4 text-sm rounded-lg hover:bg-[#2a2a2a] transition-colors"
+                  >
+                    {event.paymentMensComment || "チケット購入（男性）"}
+                  </a>
+                )}
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────
+// TokyoSponsor
 // ─────────────────────────────────────────
 function TokyoSponsor() {
   return (
@@ -162,14 +353,6 @@ function TokyoSponsor() {
 // ─────────────────────────────────────────
 // メインページ
 // ─────────────────────────────────────────
-type Achievement = {
-  title: string;
-  date: string;
-  visitors: string;
-  description: string;
-  image: string;
-};
-
 export default function LegacyTokyoPage() {
   const [achievements, setAchievements] = useState<Achievement[]>(
     tokyoAchievementsFallback,
@@ -198,13 +381,12 @@ export default function LegacyTokyoPage() {
             image: toDriveImageUrl(row["image_url"] ?? ""),
           }));
 
-        // データがあればスプレッドシートのデータを使用、なければフォールバックのまま
         if (data.length > 0) {
           setAchievements(data);
         }
       })
       .catch(() => {
-        // エラー時もフォールバック表示のまま（エラー表示はしない）
+        // エラー時もフォールバック表示のまま
       })
       .finally(() => {
         setLoading(false);
@@ -237,19 +419,7 @@ export default function LegacyTokyoPage() {
       <OrganizerMessage sectionNumber="04" />
       <SectionDivider fromColor="#ffffff" toColor="#ffffff" flip />
       <div id="next-event">
-        <NextEvent
-          sectionNumber="05"
-          femaleTicketUrl="https://buy.stripe.com/8x228r8UBe7C6yx9cZao805"
-          maleTicketUrl="https://buy.stripe.com/bJecN58UBe7C1edbl7ao806"
-          eventName="Legacy Tokyo"
-          eventDate="2024.04.18"
-          eventDay="Saturday"
-          eventTime="18:00 - 21:00"
-          eventVenue="グレイドパーク恵比寿"
-          eventTicket="お一人様：男性5000円　女性3000円"
-          eventNote="事前支払いは以下まで。※当日はメールアドレス宛に送信されるPDFを受付スタッフにお見せください。"
-          eventImage="https://static.readdy.ai/image/0c61843cac5595a4ea86012b4ca98e8d/7f98b9a5975bd1be0d1fe09e4fac953a.jpeg"
-        />
+        <TokyoNextEvent sectionNumber="05" />
       </div>
       <SectionDivider fromColor="#ffffff" toColor="#06C755" />
       <div id="line-group">

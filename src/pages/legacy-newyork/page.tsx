@@ -11,10 +11,14 @@ import SectionDivider from "../../components/feature/SectionDivider";
 import ScrollReveal from "../../components/base/ScrollReveal";
 
 // ─────────────────────────────────────────
-// スプレッドシート設定
+// スプレッドシート設定（実績）
 // ─────────────────────────────────────────
 const SHEET_ID = "1oJPixIQRn56692zyPXhmEBOPmITLqJ99C-EM15dRtC8";
 const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+
+// NEXT開催スプレッドシート
+const NEXT_EVENT_SHEET_ID = "18BJT5j5KO7aljGzxGz8aU_9ER42PW_-O5T2990kFNQA";
+const NEXT_EVENT_CSV_URL = `https://docs.google.com/spreadsheets/d/${NEXT_EVENT_SHEET_ID}/export?format=csv`;
 
 // GoogleドライブのURLを画像直接表示用URLに変換
 function toDriveImageUrl(url: string): string {
@@ -124,9 +128,76 @@ type Achievement = {
 };
 
 // ─────────────────────────────────────────
-// NYNextEvent（既存のまま）
+// NEXT開催の型定義
+// ─────────────────────────────────────────
+type NextEvent = {
+  eventName: string;
+  date: string;
+  time: string;
+  venue: string;
+  ticket: string;
+  ticketComment: string;
+  paymentWomens: string;
+  paymentMens: string;
+  image: string;
+};
+
+// ─────────────────────────────────────────
+// NYNextEvent（スプレッドシートから動的取得）
 // ─────────────────────────────────────────
 function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
+  const [event, setEvent] = useState<NextEvent | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(NEXT_EVENT_CSV_URL)
+      .then((res) => res.text())
+      .then((csv) => {
+        const rows = parseCSV(csv);
+        if (rows.length === 0) return;
+        const row = rows[0]; // 最新の1行目を使用
+        setEvent({
+          eventName: row["EVENT NAME"] ?? "",
+          date: row["DATE"] ?? "",
+          time: row["TIME"] ?? "",
+          venue: row["VANUE"] ?? "",
+          ticket: row["TICKET"] ?? "",
+          ticketComment: row["TICKET COMMENT"] ?? "",
+          paymentWomens: row["payment_womens"] ?? "",
+          paymentMens: row["payment_mens"] ?? "",
+          image: toDriveImageUrl(row["image"] ?? ""),
+        });
+      })
+      .catch((e) => {
+        console.error("NEXT開催データの取得に失敗しました", e);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <section id="next-event" className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-gray-400 text-sm">読み込み中...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!event) {
+    return (
+      <section id="next-event" className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <p className="text-gray-400 text-sm">
+            イベント情報を取得できませんでした。
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="next-event" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">
@@ -160,9 +231,9 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
           <ScrollReveal direction="right" delay={100}>
             <div className="relative">
               <img
-                src="https://static.readdy.ai/image/0c61843cac5595a4ea86012b4ca98e8d/a22249f961a405e68ac30c023133c072.jpeg"
-                alt="第4回 Legacy New York"
-                className="w-full h-[500px] object-cover object-top rounded-lg"
+                src={event.image}
+                alt={event.eventName}
+                className="w-full h-[500px] object-contain rounded-lg"
               />
             </div>
           </ScrollReveal>
@@ -174,7 +245,7 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                   className="text-2xl font-light text-[#111111]"
                   style={{ fontFamily: "'Playfair Display', serif" }}
                 >
-                  第4回 Legacy New York
+                  {event.eventName}
                 </h3>
               </div>
               <div>
@@ -183,32 +254,27 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                   className="text-4xl font-light text-[#111111]"
                   style={{ fontFamily: "'Playfair Display', serif" }}
                 >
-                  2026.04.18
+                  {event.date}
                 </p>
-                <p className="text-lg text-gray-500">Saturday</p>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-2">TIME</p>
-                <p className="text-lg text-[#111111]">18:30 - 21:30</p>
+                <p className="text-lg text-[#111111]">{event.time}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-2">VENUE</p>
-                <p className="text-lg text-[#111111]">
-                  230 Fifth Rooftop Bar Penthouse (20th Floor)
-                </p>
+                <p className="text-lg text-[#111111]">{event.venue}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-2">TICKET</p>
-                <p className="text-lg text-[#111111]">$40</p>
-                <p className="text-sm text-gray-500">
-                  ※ドリンク費は別となります。
-                </p>
+                <p className="text-lg text-[#111111]">{event.ticket}</p>
+                <p className="text-sm text-gray-500">{event.ticketComment}</p>
               </div>
               <button
                 disabled
                 className="w-full text-center bg-gray-300 text-gray-500 px-8 py-4 text-sm whitespace-nowrap rounded-lg cursor-not-allowed opacity-60"
               >
-                今回は現地支払いのみとさせていただきます。
+                {event.paymentWomens}
               </button>
             </div>
           </ScrollReveal>
@@ -267,7 +333,6 @@ function NYSponsor() {
             <p className="text-sm text-white/50 mb-4">
               スポンサーシップに関するお問い合わせ
             </p>
-
             <a
               href="mailto:mail2tatsu@gmail.com"
               className="inline-flex items-center gap-2 text-white/70 hover:text-[#B11226] transition-colors cursor-pointer"
@@ -319,7 +384,6 @@ export default function LegacyNewYork() {
       });
   }, []);
 
-  // ローディング・エラー時の代替表示用コンポーネント
   const AchievementsPlaceholder = ({ message }: { message: string }) => (
     <div className="bg-[#111111] py-24 text-center">
       <p className="text-white/40 text-sm">{message}</p>
