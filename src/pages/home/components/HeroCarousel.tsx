@@ -36,7 +36,7 @@ export default function HeroCarousel() {
           } else if (contentType === "image") {
             const fileId = getFileId(value);
             const imageUrl = fileId
-              ? `https://drive.google.com/uc?export=view&id=${fileId}`
+              ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w1920`
               : value;
             items.push({ type: "image", url: imageUrl, name });
           }
