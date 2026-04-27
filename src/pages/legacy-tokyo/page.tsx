@@ -332,14 +332,79 @@ function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
 }
 
 // ─────────────────────────────────────────
-// TokyoSponsor
+// Tokyoスポンサースプレッドシート設定
+// ─────────────────────────────────────────
+const TOKYO_SPONSOR_SHEET_ID = "1bG5ud9potKwHgwIkzXAtXVYr17euSmUCEfJYgvqoGaA";
+const TOKYO_SPONSOR_CSV_URL = `https://docs.google.com/spreadsheets/d/${TOKYO_SPONSOR_SHEET_ID}/export?format=csv`;
+
+// ─────────────────────────────────────────
+// TokyoSponsor（動的取得版）
 // ─────────────────────────────────────────
 function TokyoSponsor() {
+  const [sponsors, setSponsors] = useState<{ name: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(TOKYO_SPONSOR_CSV_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error("スポンサー情報の取得に失敗しました");
+        return res.text();
+      })
+      .then((csv) => {
+        const rows = parseCSV(csv);
+        const data = rows
+          .filter(
+            (row) => row["スポンサー名"] && row["スポンサー名"].trim() !== "",
+          )
+          .map((row) => ({
+            name: row["スポンサー名"].replace(/様$/, "").trim(),
+          }));
+        setSponsors(data);
+      })
+      .catch((e) => console.error(e))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="text-center mb-12">
+          <p className="text-white/40 text-sm">読み込み中...</p>
+        </div>
+      );
+    }
+    if (sponsors.length === 0) {
+      return (
+        <div className="text-center mb-12">
+          <p className="text-white/50 text-sm mb-2">
+            現在スポンサーを募集しています。
+          </p>
+          <p className="text-white/30 text-xs">
+            ご支援いただける方はお気軽にご連絡ください。
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-12">
+        {sponsors.map((sponsor, index) => (
+          <ScrollReveal key={index} delay={index * 60} direction="up">
+            <div className="bg-white/5 border border-white/10 hover:border-[#B11226]/40 rounded-xl px-6 py-5 shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center">
+              <p className="text-sm font-medium text-white/80 tracking-wide text-center">
+                {sponsor.name}様
+              </p>
+            </div>
+          </ScrollReveal>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <section id="sponsors" className="py-24 bg-[#111111]">
       <div className="max-w-7xl mx-auto px-6">
         <ScrollReveal>
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <p className="text-xs tracking-widest text-white/40 mb-3">
               SUPPORTED BY
             </p>
@@ -347,9 +412,16 @@ function TokyoSponsor() {
               className="text-3xl font-light text-white"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
-              スポンサー募集中
+              交流会スポンサー様
             </h2>
-            <div className="w-16 h-px bg-[#B11226] mx-auto mt-4 mb-8"></div>
+            <div className="w-16 h-px bg-[#B11226] mx-auto mt-4"></div>
+          </div>
+        </ScrollReveal>
+
+        {renderContent()}
+
+        <ScrollReveal delay={200}>
+          <div className="text-center">
             <p className="text-sm text-white/50 mb-4">
               スポンサーシップに関するお問い合わせ
             </p>
@@ -366,7 +438,6 @@ function TokyoSponsor() {
     </section>
   );
 }
-
 // ─────────────────────────────────────────
 // メインページ
 // ─────────────────────────────────────────
