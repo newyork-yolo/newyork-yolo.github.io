@@ -20,6 +20,17 @@ const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export
 const NEXT_EVENT_SHEET_ID = "1HpGF3dS7y6zosBtUFuKbeIzi_67M159om5DEtIefV3w";
 const NEXT_EVENT_CSV_URL = `https://docs.google.com/spreadsheets/d/${NEXT_EVENT_SHEET_ID}/export?format=csv`;
 
+// 概要スプレッドシート
+const OVERVIEW_SHEET_ID = "1ab329eQasyVy3SBhBv13R9da7hZ7ILTq6vOYHJNLpTc";
+const OVERVIEW_CSV_URL = `https://docs.google.com/spreadsheets/d/${OVERVIEW_SHEET_ID}/export?format=csv`;
+
+// Tokyoスポンサースプレッドシート
+const TOKYO_SPONSOR_SHEET_ID = "1bG5ud9potKwHgwIkzXAtXVYr17euSmUCEfJYgvqoGaA";
+const TOKYO_SPONSOR_CSV_URL = `https://docs.google.com/spreadsheets/d/${TOKYO_SPONSOR_SHEET_ID}/export?format=csv`;
+
+// ─────────────────────────────────────────
+// ユーティリティ
+// ─────────────────────────────────────────
 function toDriveImageUrl(url: string): string {
   const match = url.match(/\/file\/d\/([^/]+)\//);
   if (match) {
@@ -63,7 +74,7 @@ function parseCSV(csv: string): Record<string, string>[] {
     return cells;
   };
 
-  const headers = parseRow(lines[0]);
+  const headers = parseRow(lines[0] || "");
   return lines
     .slice(1)
     .filter((line) => line.trim())
@@ -106,14 +117,6 @@ const tokyoAttractivePoints = [
   },
 ];
 
-const tokyoOverviewItems = [
-  { label: "団体名", value: "Legacy Tokyo" },
-  { label: "設立", value: "2026年" },
-  { label: "拠点", value: "Tokyo, Japan" },
-  { label: "活動内容", value: "イベントプロデュース・空間デザイン" },
-  { label: "参加者規模", value: "80名〜150名" },
-];
-
 const tokyoAchievementsFallback = [
   {
     title: "Coming Soon",
@@ -150,6 +153,11 @@ type NextEvent = {
   image: string;
 };
 
+type OverviewItem = {
+  label: string;
+  value: string;
+};
+
 // ─────────────────────────────────────────
 // TokyoNextEvent（スプレッドシートから動的取得）
 // ─────────────────────────────────────────
@@ -168,7 +176,7 @@ function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
           eventName: row["EVENT NAME"] ?? "",
           date: row["DATE"] ?? "",
           time: row["TIME"] ?? "",
-          venue: row["VANUE"] ?? "",
+          venue: row["VENUE"] ?? row["VANUE"] ?? "",
           ticket: row["TICKET"] ?? "",
           ticketComment: row["TICKET COMMENT"] ?? "",
           paymentWomensUrl: row["payment_womens_url"] ?? "",
@@ -195,14 +203,6 @@ function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
       </section>
     );
   }
-  // TokyoNextEvent の return の直前（if (!event) の下あたり）に追加
-
-  const isValidUrl = (url: string) => {
-    return url && url.trim() !== "" && url.trim() !== "-";
-  };
-
-  const isWomenPaymentActive = isValidUrl(event.paymentWomensUrl);
-  const isMenPaymentActive = isValidUrl(event.paymentMensUrl);
 
   if (!event) {
     return (
@@ -215,6 +215,13 @@ function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
       </section>
     );
   }
+
+  const isValidUrl = (url: string) => {
+    return url && url.trim() !== "" && url.trim() !== "-";
+  };
+
+  const isWomenPaymentActive = isValidUrl(event.paymentWomensUrl);
+  const isMenPaymentActive = isValidUrl(event.paymentMensUrl);
 
   return (
     <section id="next-event" className="py-24 bg-white">
@@ -293,7 +300,6 @@ function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                 </p>
               </div>
               <div className="flex flex-col gap-3">
-                {/* 女性用 */}
                 <a
                   href={
                     isWomenPaymentActive ? event.paymentWomensUrl : undefined
@@ -309,7 +315,6 @@ function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                   {event.paymentWomensComment || "チケット購入（女性）"}
                 </a>
 
-                {/* 男性用 */}
                 <a
                   href={isMenPaymentActive ? event.paymentMensUrl : undefined}
                   target={isMenPaymentActive ? "_blank" : undefined}
@@ -330,12 +335,6 @@ function TokyoNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
     </section>
   );
 }
-
-// ─────────────────────────────────────────
-// Tokyoスポンサースプレッドシート設定
-// ─────────────────────────────────────────
-const TOKYO_SPONSOR_SHEET_ID = "1bG5ud9potKwHgwIkzXAtXVYr17euSmUCEfJYgvqoGaA";
-const TOKYO_SPONSOR_CSV_URL = `https://docs.google.com/spreadsheets/d/${TOKYO_SPONSOR_SHEET_ID}/export?format=csv`;
 
 // ─────────────────────────────────────────
 // TokyoSponsor（動的取得版）
@@ -425,6 +424,7 @@ function TokyoSponsor() {
             <p className="text-sm text-white/50 mb-4">
               スポンサーシップに関するお問い合わせ
             </p>
+
             <a
               href="mailto:mail2tatsu@gmail.com"
               className="inline-flex items-center gap-2 text-white/70 hover:text-[#B11226] transition-colors cursor-pointer"
@@ -438,6 +438,7 @@ function TokyoSponsor() {
     </section>
   );
 }
+
 // ─────────────────────────────────────────
 // メインページ
 // ─────────────────────────────────────────
@@ -445,11 +446,13 @@ export default function LegacyTokyoPage() {
   const [achievements, setAchievements] = useState<Achievement[]>(
     tokyoAchievementsFallback,
   );
+  const [overviewItems, setOverviewItems] = useState<OverviewItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     window.scrollTo(0, 0);
 
+    // 実績データ取得
     fetch(SHEET_CSV_URL)
       .then((res) => {
         if (!res.ok) throw new Error("fetch failed");
@@ -468,17 +471,34 @@ export default function LegacyTokyoPage() {
             description: row["comment"] ?? "",
             image: toDriveImageUrl(row["image_url"] ?? ""),
           }));
-
         if (data.length > 0) {
           setAchievements(data);
         }
       })
-      .catch(() => {
-        // エラー時もフォールバック表示のまま
-      })
+      .catch(() => {})
       .finally(() => {
         setLoading(false);
       });
+
+    // 概要データ取得
+    fetch(OVERVIEW_CSV_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error("fetch failed");
+        return res.text();
+      })
+      .then((csv) => {
+        const rows = parseCSV(csv);
+        if (rows.length === 0) return;
+        const row = rows[0];
+        setOverviewItems([
+          { label: "団体名", value: row["団体名"] ?? "" },
+          { label: "設立", value: row["設立"] ?? "" },
+          { label: "拠点", value: row["拠点"] ?? "" },
+          { label: "活動内容", value: row["活動内容"] ?? "" },
+          { label: "参加者規模", value: row["参加者規模"] ?? "" },
+        ]);
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -491,7 +511,7 @@ export default function LegacyTokyoPage() {
       </div>
       <SectionDivider fromColor="#ffffff" toColor="#f9fafb" flip />
       <div id="overview">
-        <Overview sectionNumber="02" items={tokyoOverviewItems} />
+        <Overview sectionNumber="02" items={overviewItems} />
       </div>
       <SectionDivider fromColor="#f9fafb" toColor="#111111" />
       <div id="achievements">

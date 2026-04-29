@@ -1,15 +1,14 @@
-
-import Navbar from './components/Navbar';
-import HeroCarousel from './components/HeroCarousel';
-import Announcement from './components/Announcement';
-import WhatIsLegacy from './components/WhatIsLegacy';
-import Philosophy from './components/Philosophy';
-import Business from './components/Business';
-import Members from './components/Members';
-import SNSSection from './components/SNSSection';
-import Events from './components/Events';
-import Footer from './components/Footer';
-import SectionDivider from '../../components/feature/SectionDivider';
+import Navbar from "./components/Navbar";
+import HeroCarousel from "./components/HeroCarousel";
+import Announcement from "./components/Announcement";
+import WhatIsLegacy from "./components/WhatIsLegacy";
+import Philosophy from "./components/Philosophy";
+import Business from "./components/Business";
+import Members from "./components/Members";
+import SNSSection from "./components/SNSSection";
+import Events from "./components/Events";
+import Footer from "./components/Footer";
+import SectionDivider from "../../components/feature/SectionDivider";
 
 export default function HomePage() {
   return (

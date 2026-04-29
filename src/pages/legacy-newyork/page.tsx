@@ -21,7 +21,13 @@ const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export
 const NEXT_EVENT_SHEET_ID = "18BJT5j5KO7aljGzxGz8aU_9ER42PW_-O5T2990kFNQA";
 const NEXT_EVENT_CSV_URL = `https://docs.google.com/spreadsheets/d/${NEXT_EVENT_SHEET_ID}/export?format=csv`;
 
-// GoogleドライブのURLを画像直接表示用URLに変換
+// 概要スプレッドシート
+const OVERVIEW_SHEET_ID = "1w3SOZabo05W23k_reJiV_hvGnEk5vNluCIuff6YVscQ";
+const OVERVIEW_CSV_URL = `https://docs.google.com/spreadsheets/d/${OVERVIEW_SHEET_ID}/export?format=csv`;
+
+// ─────────────────────────────────────────
+// ユーティリティ
+// ─────────────────────────────────────────
 function toDriveImageUrl(url: string): string {
   const match = url.match(/\/file\/d\/([^/]+)\//);
   if (match) {
@@ -30,13 +36,14 @@ function toDriveImageUrl(url: string): string {
   return url;
 }
 
-// CSVパーサー（カンマ・改行を含むセルのダブルクォート囲みに対応）
 function parseCSV(csv: string): Record<string, string>[] {
   const lines: string[] = [];
   let current = "";
   let inQuotes = false;
+
   for (let i = 0; i < csv.length; i++) {
     const char = csv[i];
+
     if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === "\n" && !inQuotes) {
@@ -46,12 +53,14 @@ function parseCSV(csv: string): Record<string, string>[] {
       current += char;
     }
   }
+
   if (current) lines.push(current);
 
   const parseRow = (line: string): string[] => {
     const cells: string[] = [];
     let cell = "";
     let inQ = false;
+
     for (const char of line) {
       if (char === '"') {
         inQ = !inQ;
@@ -62,11 +71,13 @@ function parseCSV(csv: string): Record<string, string>[] {
         cell += char;
       }
     }
+
     cells.push(cell.trim());
     return cells;
   };
 
-  const headers = parseRow(lines[0]);
+  const headers = parseRow(lines[0] || "");
+
   return lines
     .slice(1)
     .filter((line) => line.trim())
@@ -109,17 +120,6 @@ const nyAttractivePoints = [
   },
 ];
 
-const nyOverviewItems = [
-  { label: "団体名", value: "Legacy New York" },
-  { label: "設立", value: "2024年" },
-  { label: "拠点", value: "New York, USA" },
-  { label: "活動内容", value: "イベントプロデュース・空間デザイン" },
-  { label: "参加者", value: "150人〜300人" },
-];
-
-// ─────────────────────────────────────────
-// 実績の型定義
-// ─────────────────────────────────────────
 type Achievement = {
   title: string;
   date: string;
@@ -128,9 +128,6 @@ type Achievement = {
   image: string;
 };
 
-// ─────────────────────────────────────────
-// NEXT開催の型定義
-// ─────────────────────────────────────────
 type NextEvent = {
   eventName: string;
   date: string;
@@ -145,9 +142,11 @@ type NextEvent = {
   image: string;
 };
 
-// ─────────────────────────────────────────
-// NYNextEvent（スプレッドシートから動的取得）
-// ─────────────────────────────────────────
+type OverviewItem = {
+  label: string;
+  value: string;
+};
+
 function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
   const [event, setEvent] = useState<NextEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -158,12 +157,14 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
       .then((csv) => {
         const rows = parseCSV(csv);
         if (rows.length === 0) return;
-        const row = rows[0]; // 最新の1行目を使用
+
+        const row = rows[0];
+
         setEvent({
           eventName: row["EVENT NAME"] ?? "",
           date: row["DATE"] ?? "",
           time: row["TIME"] ?? "",
-          venue: row["VANUE"] ?? "",
+          venue: row["VENUE"] ?? row["VANUE"] ?? "",
           ticket: row["TICKET"] ?? "",
           ticketComment: row["TICKET COMMENT"] ?? "",
           paymentWomensUrl: row["payment_womens_url"] ?? "",
@@ -191,15 +192,6 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
     );
   }
 
-  // NYNextEvent の return の直前（if (!event) の下あたり）に追加
-
-  const isValidUrl = (url: string) => {
-    return url && url.trim() !== "" && url.trim() !== "-";
-  };
-
-  const isWomenPaymentActive = isValidUrl(event.paymentWomensUrl);
-  const isMenPaymentActive = isValidUrl(event.paymentMensUrl);
-
   if (!event) {
     return (
       <section id="next-event" className="py-24 bg-white">
@@ -211,6 +203,13 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
       </section>
     );
   }
+
+  const isValidUrl = (url: string) => {
+    return url && url.trim() !== "" && url.trim() !== "-";
+  };
+
+  const isWomenPaymentActive = isValidUrl(event.paymentWomensUrl);
+  const isMenPaymentActive = isValidUrl(event.paymentMensUrl);
 
   return (
     <section id="next-event" className="py-24 bg-white">
@@ -229,7 +228,7 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                   NEXT EVENT
                 </h3>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-px bg-[#B11226]"></div>
+                  <div className="w-12 h-px bg-[#B11226]" />
                   <h2
                     className="text-2xl font-light text-[#111111]"
                     style={{ fontFamily: "'Playfair Display', serif" }}
@@ -241,16 +240,18 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
             </div>
           </div>
         </ScrollReveal>
+
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <ScrollReveal direction="right" delay={100}>
             <div className="relative">
               <img
-                src={event.image}
+                src={event.image || "/fallback.jpg"}
                 alt={event.eventName}
                 className="w-full h-[500px] object-contain rounded-lg"
               />
             </div>
           </ScrollReveal>
+
           <ScrollReveal direction="left" delay={200}>
             <div className="space-y-8">
               <div>
@@ -262,6 +263,7 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                   {event.eventName}
                 </h3>
               </div>
+
               <div>
                 <p className="text-xs text-gray-400 mb-2">DATE</p>
                 <p
@@ -271,21 +273,24 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                   {event.date}
                 </p>
               </div>
+
               <div>
                 <p className="text-xs text-gray-400 mb-2">TIME</p>
                 <p className="text-lg text-[#111111]">{event.time}</p>
               </div>
+
               <div>
                 <p className="text-xs text-gray-400 mb-2">VENUE</p>
                 <p className="text-lg text-[#111111]">{event.venue}</p>
               </div>
+
               <div>
                 <p className="text-xs text-gray-400 mb-2">TICKET</p>
                 <p className="text-lg text-[#111111]">{event.ticket}</p>
                 <p className="text-sm text-gray-500">{event.ticketComment}</p>
               </div>
+
               <div className="flex flex-col gap-3">
-                {/* 女性用 */}
                 <a
                   href={
                     isWomenPaymentActive ? event.paymentWomensUrl : undefined
@@ -301,7 +306,6 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
                   {event.paymentWomensComment || "チケット購入（女性）"}
                 </a>
 
-                {/* 男性用 */}
                 <a
                   href={isMenPaymentActive ? event.paymentMensUrl : undefined}
                   target={isMenPaymentActive ? "_blank" : undefined}
@@ -323,11 +327,9 @@ function NYNextEvent({ sectionNumber = "05" }: { sectionNumber?: string }) {
   );
 }
 
-// ─────────────────────────────────────────
-// メインページ
-// ─────────────────────────────────────────
 export default function LegacyNewYork() {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [overviewItems, setOverviewItems] = useState<OverviewItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -350,6 +352,7 @@ export default function LegacyNewYork() {
             description: row["comment"] ?? "",
             image: toDriveImageUrl(row["image_url"] ?? ""),
           }));
+
         setAchievements(data);
       })
       .catch(() => {
@@ -357,6 +360,29 @@ export default function LegacyNewYork() {
       })
       .finally(() => {
         setLoading(false);
+      });
+
+    fetch(OVERVIEW_CSV_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error("fetch failed");
+        return res.text();
+      })
+      .then((csv) => {
+        const rows = parseCSV(csv);
+        if (rows.length === 0) return;
+
+        const row = rows[0];
+
+        setOverviewItems([
+          { label: "団体名", value: row["団体名"] ?? "" },
+          { label: "設立", value: row["設立"] ?? "" },
+          { label: "拠点", value: row["拠点"] ?? "" },
+          { label: "活動内容", value: row["活動内容"] ?? "" },
+          { label: "参加者規模", value: row["参加者規模"] ?? "" },
+        ]);
+      })
+      .catch(() => {
+        // noop
       });
   }, []);
 
@@ -373,7 +399,7 @@ export default function LegacyNewYork() {
       <SectionDivider fromColor="#111111" toColor="#ffffff" />
       <Attractive sectionNumber="01" points={nyAttractivePoints} />
       <SectionDivider fromColor="#ffffff" toColor="#f9fafb" flip />
-      <Overview sectionNumber="02" items={nyOverviewItems} />
+      <Overview sectionNumber="02" items={overviewItems} />
       <SectionDivider fromColor="#f9fafb" toColor="#111111" />
 
       {loading ? (

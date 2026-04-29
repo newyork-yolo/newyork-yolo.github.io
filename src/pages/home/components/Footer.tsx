@@ -133,11 +133,7 @@ export default function Footer() {
           <div className="flex gap-6">
             <Link to="/tokushoho">特定商取引法に基づく表記</Link>
 
-            <a
-              href="https://readdy.ai/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href="" target="_blank" rel="noopener noreferrer">
               Built by NewYorkYOLO
             </a>
           </div>
